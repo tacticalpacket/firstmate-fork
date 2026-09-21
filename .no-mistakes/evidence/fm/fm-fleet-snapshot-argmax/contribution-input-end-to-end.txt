@@ -1,0 +1,94 @@
+# Evidence: the whole backlog now reaches the contributions poll
+
+Scenario: a firstmate home whose data/backlog.md holds 200 in-flight tasks
+(27,633 bytes), two of them with durable state/task-*.meta records carrying a
+pr= URL. This is the shape that was silently dropping contribution signal.
+
+$ wc -c $FM_HOME/data/backlog.md
+27633 $DEMO/home/data/backlog.md
+
+
+## 1. bin/fm-fleet-snapshot.sh --contribution-input
+
+--- BEFORE (base dee119b) ---
+$BIN/fm-fleet-snapshot.sh: line 1991: /usr/bin/jq: Argument list too long
+exit status: 0
+stdout bytes: 0   <-- empty payload, yet exit 0
+
+--- AFTER (2ce814f) ---
+exit status: 0
+stdout bytes: 259247
+
+$ jq ... input.json
+{
+  "backlog_present": true,
+  "backlog_records": 200,
+  "tasks": 2,
+  "first_task": "task-0001",
+  "first_pr": "https://github.com/kunchenguid/firstmate/pull/9",
+  "last_backlog_row": "task-0200"
+}
+
+Nothing capped, truncated or sampled: all 200 rows survive, and the
+payload (259247 bytes) is over twice the 131072-byte single-argument limit
+that killed the old argv transport.
+
+
+## 2. The consumer: bin/fm-contributions.sh snapshot <input.json>
+
+--- BEFORE: the empty input.json is read as "no pending contribution work" ---
+{
+  "known": 0,
+  "unreadable_records": 1,
+  "counts": {
+    "captain": 0,
+    "fleet": 0,
+    "maintainer": 0,
+    "nobody": 0
+  }
+}
+
+--- AFTER: the real payload ---
+{
+  "known": 201,
+  "unreadable_records": 0,
+  "counts": {
+    "captain": 0,
+    "fleet": 201,
+    "maintainer": 0,
+    "nobody": 0
+  }
+}
+
+
+## 3. The real poll (bin/fm-contributions.sh poll), gh stubbed offline
+
+--- BEFORE: the poll does nothing at all, silently ---
+$BIN/fm-fleet-snapshot.sh: line 1991: /usr/bin/jq: Argument list too long
+exit status: 0 (no owned contribution ever surfaces)
+
+--- AFTER: the poll walks the owned contributions ---
+contributions: observation unavailable for https://github.com/kunchenguid/firstmate/pull/1001
+contributions: observation unavailable for https://github.com/kunchenguid/firstmate/pull/9
+contributions: observation unavailable for https://github.com/kunchenguid/firstmate/pull/1002
+contributions: observation unavailable for https://github.com/kunchenguid/firstmate/pull/1003
+contributions: observation unavailable for https://github.com/kunchenguid/firstmate/pull/1004
+contributions: observation unavailable for https://github.com/kunchenguid/firstmate/pull/1005
+... (continues through the owned PR set)
+
+
+## 4. A failed assembly is now fatal, not silent
+
+jq shimmed so only the {backlog,tasks} assembly step fails (exit 9), standing
+in for ENOSPC on TMPDIR or any other jq failure. Every other jq call runs real.
+
+--- BEFORE ---
+jq: error: simulated assembly failure (e.g. ENOSPC on TMPDIR)
+exit status: 0   <-- silent success on an empty payload
+stdout bytes: 0
+
+--- AFTER ---
+jq: error: simulated assembly failure (e.g. ENOSPC on TMPDIR)
+fm-fleet-snapshot: contribution input assembly failed
+exit status: 1   <-- fatal, with the neighbouring guards' message shape
+stdout bytes: 0

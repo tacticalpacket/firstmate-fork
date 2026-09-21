@@ -1,0 +1,43 @@
+# Evidence: output shape unchanged, and the regression test has teeth
+
+## A. The emitted JSON is byte-identical wherever the old transport worked
+
+The old argv transport dies above the kernel's 131072-byte single-argument
+limit. At every backlog size it could still carry, the new stdin transport
+emits exactly the same bytes (cmp, not a shape comparison):
+
+    1-row backlog ->   4038 bytes   cmp: identical
+   25-row backlog ->  34753 bytes   cmp: identical
+   60-row backlog ->  79553 bytes   cmp: identical
+   80-row backlog -> 105153 bytes   cmp: identical
+   90-row backlog -> 117953 bytes   cmp: identical
+   95-row backlog -> 124353 bytes   cmp: identical
+  120-row backlog -> pre-fix emits 0 bytes (argv limit); post-fix emits the
+                     whole document. That difference is the fix.
+
+## B. The new regression test fails against the pre-fix implementation
+
+$ git checkout dee119b -- bin/fm-fleet-snapshot.sh
+$ /bin/bash tests/fm-fleet-snapshot-view.test.sh
+ok - empty fleet snapshot and view use explicit absence markers
+.../bin/fm-fleet-snapshot.sh: line 1991: /usr/bin/jq: Argument list too long
+not ok - contribution input printed nothing on a 1600-row backlog
+
+(the harness stops on the first failure; the second new case is covered by the
+ pre/post comparison in section 4 of contribution-input-end-to-end.txt, where
+ the pre-fix script exits 0 on the same failed assembly the test drives)
+
+$ git checkout HEAD -- bin/fm-fleet-snapshot.sh   # worktree restored
+
+## C. Both new cases pass against the change, and the CI count matches
+
+2:ok - contribution input carries a backlog too large for a command-line argument
+3:ok - a failed contribution input assembly exits nonzero instead of printing nothing
+
+$ snapshot_count=$(... | grep -c "^ok - ")
+snapshot_count=20   (.github/workflows/ci.yml asserts -eq 20)
+
+The regression case invokes the snapshot exactly once, at the qualifying size;
+the calibrating loop only grows the backlog file and probes it with `env true`:
+  tests/fm-fleet-snapshot-view.test.sh:1206:  out=$(FM_HOME="$home" "$SNAPSHOT" --contribution-input) \
+  tests/fm-fleet-snapshot-view.test.sh:1249:  out=$(PATH="$fakebin:$PATH" FM_HOME="$home" "$SNAPSHOT" --contribution-input 2>"$err") || rc=$?
