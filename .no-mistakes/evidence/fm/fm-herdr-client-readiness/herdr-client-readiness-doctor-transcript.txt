@@ -1,0 +1,84 @@
+fm-remote-doctor.sh on a host whose only herdr client the running fm-remote
+server refuses (protocol 20 client, protocol 22 server, compatible:false).
+
+The fixture is the real bin/fm-remote-doctor.sh driven against a private HOME,
+a fake launchctl/uname/lsof account fixture, and the shared stale/current herdr
+client pair from tests/herdr-client-pair-fixture.sh. Paths are rewritten to
+$HOME / $FIXTURE / $REPO for readability; nothing else is edited.
+
+================================================================================
+BEFORE the fix (base 920a7d9, bin/backends/herdr.sh + bin/fm-remote-doctor.sh
+restored to base, same fixture): the unusable install is reported healthy.
+================================================================================
+$ herdr --version   # the only herdr client on this account's PATH
+{"client":{"version":"0.8.2","channel":"stable","protocol":20},"server":{"running":true,"version":"0.9.0","protocol":22,"compatible":false,"restart_needed":true}}
+
+$ bin/fm-remote-doctor.sh
+mode=check
+path=$HOME/.local/bin:$FIXTURE/bin:$FIXTURE_ROOT/tools:$FIXTURE_ROOT/sysbin
+entrypoint=no
+note: not launched through the fixed remote entrypoint; the reported PATH is this caller environment.
+platform=linux
+required git=$FIXTURE_ROOT/tools/git
+required jq=$FIXTURE_ROOT/tools/jq
+required herdr=$HOME/.local/bin/herdr
+required tasks-axi=$FIXTURE/bin/tasks-axi
+required treehouse=$FIXTURE/bin/treehouse
+required harness=claude:$FIXTURE/bin/claude
+optional tmux=$FIXTURE_ROOT/sysbin/tmux
+optional no-mistakes=absent
+optional gh=absent
+check herdr=ok: $HOME/.local/bin/herdr
+check gui-session=skip: no Aqua login session applies on linux
+check remote-job-worker=ok: the Linux remote job worker is running
+check remote-job-worker-loaded=skip: Aqua launch agents do not apply on linux
+check remote-job-probe=ok: the remote job worker published a fresh heartbeat
+check launchagent=skip: launch agents apply only on darwin
+check launchagent-scope=skip: launch agents apply only on darwin
+check launchagent-loaded=skip: launch agents apply only on darwin
+check herdr-server=ok: session fm-remote is running
+check entrypoint-link=skip: this run did not come through the fixed remote entrypoint
+ok: remote second-mate readiness confirmed on this host
+exit status: 0
+
+--- probes the doctor made against that client (its own argv log) ---
+compatibility probes of $HOME/.local/bin/herdr: 1
+
+================================================================================
+AFTER the fix (9c5748b): the same host is a named human gap with an operator
+action, and the doctor actually probes the lone client for compatibility.
+================================================================================
+$ herdr --version   # the only herdr client on this account's PATH
+{"client":{"version":"0.8.2","channel":"stable","protocol":20},"server":{"running":true,"version":"0.9.0","protocol":22,"compatible":false,"restart_needed":true}}
+
+$ bin/fm-remote-doctor.sh
+mode=check
+path=$HOME/.local/bin:$FIXTURE/bin:$FIXTURE_ROOT/tools:$FIXTURE_ROOT/sysbin
+entrypoint=no
+note: not launched through the fixed remote entrypoint; the reported PATH is this caller environment.
+platform=linux
+required git=$FIXTURE_ROOT/tools/git
+required jq=$FIXTURE_ROOT/tools/jq
+required herdr=$HOME/.local/bin/herdr
+required tasks-axi=$FIXTURE/bin/tasks-axi
+required treehouse=$FIXTURE/bin/treehouse
+required harness=claude:$FIXTURE/bin/claude
+optional tmux=$FIXTURE_ROOT/sysbin/tmux
+optional no-mistakes=absent
+optional gh=absent
+check herdr=human: $HOME/.local/bin/herdr is a protocol mismatch with the running session fm-remote server and no other herdr client on the remote runtime PATH proved compatible
+check gui-session=skip: no Aqua login session applies on linux
+check remote-job-worker=ok: the Linux remote job worker is running
+check remote-job-worker-loaded=skip: Aqua launch agents do not apply on linux
+check remote-job-probe=ok: the remote job worker published a fresh heartbeat
+check launchagent=skip: launch agents apply only on darwin
+check launchagent-scope=skip: launch agents apply only on darwin
+check launchagent-loaded=skip: launch agents apply only on darwin
+check herdr-server=ok: session fm-remote is running
+check entrypoint-link=skip: this run did not come through the fixed remote entrypoint
+action: herdr: run 'herdr status --json --session fm-remote' on that account to see which side is stale, then either restart the session fm-remote server on the build its clients speak or install a client whose protocol matches the running server; until then every pane read and doorbell fails with protocol_mismatch
+error: this host is not ready for a remote second mate; unresolved: herdr
+exit status: 1
+
+--- probes the doctor made against that client (its own argv log) ---
+compatibility probes of $HOME/.local/bin/herdr: 2

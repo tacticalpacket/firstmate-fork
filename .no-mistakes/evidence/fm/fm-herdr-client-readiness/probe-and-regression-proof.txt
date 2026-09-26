@@ -1,0 +1,26 @@
+Proof that the new coverage in tests/fm-remote-doctor.test.sh has teeth.
+
+--------------------------------------------------------------------------------
+1. Regression: the new cases FAIL on the base tree.
+   `git checkout 920a7d9 -- bin/backends/herdr.sh bin/fm-remote-doctor.sh`
+   then `bash tests/fm-remote-doctor.test.sh`
+--------------------------------------------------------------------------------
+ok - a missing herdr CLI is a human gap that --fix never claims to close
+not ok - a host whose only herdr client the running server refuses was reported ready: expected exit 1, got 0
+rc=1
+
+--------------------------------------------------------------------------------
+2. Mutation: the per-client probe assertion (the one reworked in 9c5748b) fails
+   when a candidate is skipped. On the fixed tree, the selection loop in
+   bin/backends/herdr.sh was mutated with a leading `continue` so no later
+   candidate is ever probed, then `bash tests/fm-remote-doctor.test.sh`.
+   Before the rework both fake clients shared one log, so this could not fail.
+--------------------------------------------------------------------------------
+ok - a missing herdr CLI is a human gap that --fix never claims to close
+ok - a lone herdr client the running server refuses is a human gap
+not ok - the doctor never asked the herdr client at /tmp/fm-remote-doctor.HafnsV/case3/bin/herdr for its compatibility with session fm-remote
+rc=1
+
+Both mutations were reverted; `git status --porcelain` is clean of source edits.
+Full suite on the unmodified target tree: all 21 cases in
+tests/fm-remote-doctor.test.sh pass.
