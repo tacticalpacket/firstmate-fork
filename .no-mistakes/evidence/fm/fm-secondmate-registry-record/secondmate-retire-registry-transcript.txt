@@ -1,0 +1,127 @@
+Operator transcript: retiring a second mate and reading data/secondmates.md
+==========================================================================
+
+The registry gives each second mate a `- <id>` routing line plus an indented
+block of that mate's hard rules. Retirement runs `bin/fm-teardown.sh <id>`;
+what the operator (and every agent that reads the registry) sees afterwards is
+data/secondmates.md itself.
+
+Each section below builds a real parent home, registers `keeper` and `design`
+through bin/fm-home-seed.sh, writes each mate's hard rules as its indented
+block, spawns `design`, then retires `design` and prints the registry.
+Fleet paths are scrubbed to <FLEET>.
+
+==============================================================
+BEFORE THE FIX - base ea7c7f7: design's hard rules survive as keeper's
+  teardown script: /tmp/fm-base-bin.vzcdws/bin
+==============================================================
+
+--- BEFORE: data/secondmates.md -----------------------------
+- keeper - keeper charter (home: <FLEET>/keeper-home; scope: keeper work; projects: alpha; added 2026-09-25)
+  HARD RULE (keeper): merge authority stays with the captain.
+- design - customer onboarding charter (home: <FLEET>/design-home; scope: customer onboarding; projects: alpha; added 2026-09-25)
+  HARD RULE (design): may merge its own PRs once CI is green.
+
+  HARD RULE (design): escalates any schema change.
+
+$ bin/fm-teardown.sh design
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+teardown design complete (window firstmate:fm-design, worktree <FLEET>/design-home)
+(exit 0)
+
+--- AFTER: data/secondmates.md ------------------------------
+- keeper - keeper charter (home: <FLEET>/keeper-home; scope: keeper work; projects: alpha; added 2026-09-25)
+  HARD RULE (keeper): merge authority stays with the captain.
+  HARD RULE (design): may merge its own PRs once CI is green.
+
+  HARD RULE (design): escalates any schema change.
+
+--- operator reads keeper's record: -------------------------
+- keeper - keeper charter (home: <FLEET>/keeper-home; scope: keeper work; projects: alpha; added 2026-09-25)
+  HARD RULE (keeper): merge authority stays with the captain.
+  HARD RULE (design): may merge its own PRs once CI is green.
+
+  HARD RULE (design): escalates any schema change.
+
+==============================================================
+AFTER THE FIX - 36a56f2: the whole record goes, keeper keeps exactly its own text
+  teardown script: bin
+==============================================================
+
+--- BEFORE: data/secondmates.md -----------------------------
+- keeper - keeper charter (home: <FLEET>/keeper-home; scope: keeper work; projects: alpha; added 2026-09-25)
+  HARD RULE (keeper): merge authority stays with the captain.
+- design - customer onboarding charter (home: <FLEET>/design-home; scope: customer onboarding; projects: alpha; added 2026-09-25)
+  HARD RULE (design): may merge its own PRs once CI is green.
+
+  HARD RULE (design): escalates any schema change.
+
+$ bin/fm-teardown.sh design
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+teardown design complete (window firstmate:fm-design, worktree <FLEET>/design-home)
+(exit 0)
+
+--- AFTER: data/secondmates.md ------------------------------
+- keeper - keeper charter (home: <FLEET>/keeper-home; scope: keeper work; projects: alpha; added 2026-09-25)
+  HARD RULE (keeper): merge authority stays with the captain.
+
+--- operator reads keeper's record: -------------------------
+- keeper - keeper charter (home: <FLEET>/keeper-home; scope: keeper work; projects: alpha; added 2026-09-25)
+  HARD RULE (keeper): merge authority stays with the captain.
+
+==============================================================
+AFTER THE FIX - an ambiguous registry (two records for one id) is left untouched and retirement stops
+  teardown script: bin
+==============================================================
+
+--- BEFORE: data/secondmates.md -----------------------------
+- keeper - keeper charter (home: <FLEET>/keeper-home; scope: keeper work; projects: alpha; added 2026-09-25)
+  HARD RULE (keeper): merge authority stays with the captain.
+- design - customer onboarding charter (home: <FLEET>/design-home; scope: customer onboarding; projects: alpha; added 2026-09-25)
+  HARD RULE (design): may merge its own PRs once CI is green.
+
+  HARD RULE (design): escalates any schema change.
+- design - customer onboarding charter (home: <FLEET>/design-home; scope: customer onboarding; projects: alpha; added 2026-09-25)
+
+$ bin/fm-teardown.sh design
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+●  WATCHER DOWN - SUPERVISION IS OFF
+●  1 task(s) in flight, but no watcher has a fresh beacon (last beat: never, grace 300s).
+●  Trust the emitted supervision protocol for this harness; do not use shell & for watcher repair.
+●  This is a supervision warning only; the guarded operation WILL still run.
+●  watcher supervision needs Stop-owned automatic recovery; inspect the hook registration and startup status before ending the turn.
+●━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+REFUSED: duplicate secondmate home assignment: local:<FLEET>/design-home: design, design
+(exit 1)
+
+--- AFTER: data/secondmates.md ------------------------------
+- keeper - keeper charter (home: <FLEET>/keeper-home; scope: keeper work; projects: alpha; added 2026-09-25)
+  HARD RULE (keeper): merge authority stays with the captain.
+- design - customer onboarding charter (home: <FLEET>/design-home; scope: customer onboarding; projects: alpha; added 2026-09-25)
+  HARD RULE (design): may merge its own PRs once CI is green.
+
+  HARD RULE (design): escalates any schema change.
+- design - customer onboarding charter (home: <FLEET>/design-home; scope: customer onboarding; projects: alpha; added 2026-09-25)
+
+--- operator reads keeper's record: -------------------------
+- keeper - keeper charter (home: <FLEET>/keeper-home; scope: keeper work; projects: alpha; added 2026-09-25)
+  HARD RULE (keeper): merge authority stays with the captain.
+
+Note on the third section: the refusal an operator sees there comes from the
+retirement's pre-existing registry validation (duplicate home assignment), which
+runs before the record removal. The operator-visible outcome is what matters for
+this change: an ambiguous registry is left byte-for-byte unchanged and the local
+route survives for retry. The new helper's own duplicate-record guard sits behind
+that validation as defense in depth.
