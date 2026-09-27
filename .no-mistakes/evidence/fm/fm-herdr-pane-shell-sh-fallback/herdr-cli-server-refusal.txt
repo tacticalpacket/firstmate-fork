@@ -1,0 +1,11 @@
+$ bash -c ". bin/backends/herdr.sh; fm_backend_herdr_cli default server start"
+error: fm_backend_herdr_cli forbids starting a herdr server; use fm_backend_herdr_server_ensure, which launches it through the shared clean environment
+exit=1
+
+$ bash -c ". bin/fm-herdr-lab.sh; fm_herdr_lab_cli fm-lab-x server start" (sibling policy, for comparison)
+fm-herdr-lab: run forbids server operations; use provision for the named lab server
+exit=1
+
+$ test oracle vs the real pane: which shell does the passwd resolver report?
+fm_test_passwd_shell=/usr/bin/bash
+pane-SHELL measured in the real herdr pane above = /usr/bin/bash

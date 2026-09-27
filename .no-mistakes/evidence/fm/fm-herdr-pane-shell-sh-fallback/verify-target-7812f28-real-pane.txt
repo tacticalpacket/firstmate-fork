@@ -1,0 +1,76 @@
+
+=== host servers BEFORE (real config root, must be untouched) ===
+[{"name":"default","running":true},{"name":"ops","running":true}]
+
+=== the scratch herdr config root this run uses ===
+XDG_CONFIG_HOME=/tmp/fm-paneenv.NZL8bf/config
+[{"default":true,"name":"default","running":false,"session_dir":"/tmp/fm-paneenv.NZL8bf/config/herdr","socket_path":"/tmp/fm-paneenv.NZL8bf/config/herdr/herdr.sock"}]
+
+=== the incident launcher: a non-interactive script, SHELL=/bin/sh, truncated PATH (/usr/local/bin:/usr/bin:/bin), pinned to task-b ===
+launcher SHELL=/bin/sh
+launcher PATH=/usr/local/bin:/usr/bin:/bin
+launcher FM_CREW_STATE_META_OVERRIDE=/tmp/fm-paneenv.NZL8bf/fm-home/state/task-b.meta
+server_ensure exit=0
+
+=== the server that launch produced ===
+{"socket":"/tmp/fm-paneenv.NZL8bf/config/herdr/sessions/fm-lab-paneenv-2891691/herdr.sock","running":true,"server_version":"0.9.1","client_version":"0.9.1"}
+
+=== a real task pane in that server ===
+container=fm-lab-paneenv-2891691:w1 pane=w1:p2
+
+=== what an operator sees IN that pane ===
+
+┌─/tmp/fm-paneenv.NZL8bf
+└─❯ echo "pane-SHELL=$SHELL"
+echo "pane-shell-proc=$(ps -o comm= -p $$)"; shopt -q login_shell && echo "pane-login-shell=yes" || echo "pane-login-she
+ll=no"
+echo "pane-argv0=$0"; echo "pane-shell-cmdline=$(tr "\\0" " " < /proc/$$/cmdline)"
+pane-SHELL=/usr/bin/bash
+echo "pane-PATH=$PATH"
+echo "pane-shasum=$(command -v shasum || echo UNREACHABLE)"
+
+┌─/tmp/fm-paneenv.NZL8bf
+└─❯ echo "pane-shell-proc=$(ps -o comm= -p $$)"; shopt -q login_shell && echo "pane-login-shell=yes" || echo "pane-login
+-shell=no"
+shasum -a 256 /etc/hostname >/dev/null 2>&1; echo "pane-shasum-exit=$?"
+echo "pane-leaked-task-pin=${FM_CREW_STATE_META_OVERRIDE:-<none>}"
+FM_HOME='/tmp/fm-paneenv.NZL8bf/fm-home' bash '/home/tacpac/.no-mistakes/worktrees/67764745d0fc/01M3GR1TZ2VZ00CSNK06EYX0
+KR/bin/fm-crew-state.sh' task-a 2>&1 | sed 's/^/pane-state-read: /'
+pane-shell-proc=bash
+pane-login-shell=no
+
+┌─/tmp/fm-paneenv.NZL8bf
+└─❯ echo "pane-argv0=$0"; echo "pane-shell-cmdline=$(tr "\\0" " " < /proc/$$/cmdline)"
+pane-argv0=/usr/bin/bash
+pane-shell-cmdline=/usr/bin/bash
+
+┌─/tmp/fm-paneenv.NZL8bf
+└─❯ echo "pane-PATH=$PATH"
+pane-PATH=/home/tacpac/.local/share/mise/shims:/home/tacpac/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/b
+in:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:/usr/bin/site_perl:/usr/bin/vendor_perl:/usr/bin/core_perl
+
+┌─/tmp/fm-paneenv.NZL8bf
+└─❯ echo "pane-shasum=$(command -v shasum || echo UNREACHABLE)"
+pane-shasum=/usr/bin/core_perl/shasum
+
+┌─/tmp/fm-paneenv.NZL8bf
+└─❯ shasum -a 256 /etc/hostname >/dev/null 2>&1; echo "pane-shasum-exit=$?"
+pane-shasum-exit=0
+
+┌─/tmp/fm-paneenv.NZL8bf
+└─❯ echo "pane-leaked-task-pin=${FM_CREW_STATE_META_OVERRIDE:-<none>}"
+pane-leaked-task-pin=<none>
+
+┌─/tmp/fm-paneenv.NZL8bf
+└─❯ FM_HOME='/tmp/fm-paneenv.NZL8bf/fm-home' bash '/home/tacpac/.no-mistakes/worktrees/67764745d0fc/01M3GR1TZ2VZ00CSNK06
+EYX0KR/bin/fm-crew-state.sh' task-a 2>&1 | sed 's/^/pane-state-read: /'
+pane-state-read: state: unknown · source: none · no metadata for task-a
+
+┌─/tmp/fm-paneenv.NZL8bf
+└─❯
+=== host servers AFTER (real config root, must be unchanged) ===
+[{"name":"default","running":true},{"name":"ops","running":true}]
+
+=== teardown (scratch config root only - this client cannot reach any other root) ===
+usage: herdr session delete <name> [--json]
+[{"default":true,"name":"default","running":false,"session_dir":"/tmp/fm-paneenv.NZL8bf/config/herdr","socket_path":"/tmp/fm-paneenv.NZL8bf/config/herdr/herdr.sock"},{"default":false,"name":"fm-lab-paneenv-2891691","running":false,"session_dir":"/tmp/fm-paneenv.NZL8bf/config/herdr/sessions/fm-lab-paneenv-2891691","socket_path":"/tmp/fm-paneenv.NZL8bf/config/herdr/sessions/fm-lab-paneenv-2891691/herdr.sock"}]
